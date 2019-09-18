@@ -1,0 +1,22 @@
+list the project ID with this command:
+#gcloud config list project
+
+set the default compute zone to us-central1-a
+#gcloud config set compute/zone us-central1-a
+
+Creating a Kubernetes Engine cluster
+#gcloud container clusters create [CLUSTER-NAME]
+
+To authenticate the cluster run the following command
+#gcloud container clusters get-credentials [CLUSTER-NAME]
+
+Deploying an hello world application to the cluster
+#kubectl run hello-server --image=gcr.io/google-samples/hello-app:1.0 --port 8080
+
+create a Kubernetes Service, which expose the application to external traffic, 
+#kubectl expose deployment hello-server --type="LoadBalancer"
+
+Run the following to delete the cluster
+#gcloud container clusters delete [CLUSTER-NAME]
+
+
