@@ -1,0 +1,8 @@
+To see the Yaml file for already created resource. For Example: see the deployment yaml file whose name is "mydeployment"
+#kubect get deployment mydeployment -o yaml
+--as
+Create a Yaml file for without creating the file. This will only create yaml file. it will not create k8s resource.
+#kubectl run --generator=run-pod/v1 nginx --image=nginx --dry-run -o yaml 
+
+To check if a user have the access to a particular resource in the cluster.
+#kubectl auth can-i create <resource_name> --as <user_name>
