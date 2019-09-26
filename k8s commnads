@@ -6,3 +6,13 @@ Create a Yaml file for without creating the file. This will only create yaml fil
 
 To check if a user have the access to a particular resource in the cluster.
 #kubectl auth can-i create <resource_name> --as <user_name>
+
+###### RBAC ########
+Role: it can only be used to grant access to resources within a single namespace.
+ClusterRole: it can be used to grant the same permissions as a Role, but because they are cluster-scoped.
+RoleBinding: it grants the permissions defined in a role to a user or set of users.
+ClusterRoleBinding: it may be used to grant permission at the cluster level and in all namespaces.
+
+Note:
+  Role and Rolebinding falls under the scope of namespaces.
+
