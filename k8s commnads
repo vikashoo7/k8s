@@ -15,4 +15,43 @@ ClusterRoleBinding: it may be used to grant permission at the cluster level and 
 
 Note:
   Role and Rolebinding falls under the scope of namespaces.
+  
+=========================================================================================================
+Rolling Update (Blue-Green-Deployment)
+--------------------------------------
 
+Below is the code should be added in the deployment file uder 'spec'
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1		## No of extra pod will be created while rolling update
+      maxUnavailable: 1		## No of pod will be at a time
+
+By default, K8s store 10 revision.
+
+To check the status of the rollout deployment
+	#kubectl rollout status deployment <deployment-name>
+
+TO deplyoy the container using command line
+	#kubectl set image deployment <deployment-name> <container-name>=<image-name>
+
+To see the history of the rollout deployment
+	#kubectl rollout history deployment <deployment-name>
+
+To view the specific rollout revision
+	#kubectl rollout history deployment <deployment-name> --revision <revison-number>
+
+To set the "CHANGE-CAUSE"
+	#kubectl annotate deployment <deployment-name> kubernetes.io/change-cause="<message for change cause>"
+
+TO put the entire command to the "change-cause" massage
+	#kubectl set image deployment  <deployment-name> <container-name>=<image-name> --record
+
+TO rollout the deplyment to the previous version
+	#kubectl rollout undo  deployment <deployment-name> --to-revision=<number-of-revision>
+
+TO pause the deployment
+	#kubectl rollout pause deployment <deployment-name>
+
+TO resume the deployment
+	#kubectl rollout resume deployment <deployment-name>
