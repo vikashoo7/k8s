@@ -1,1 +1,5 @@
+What is Istio?
+	It is a "Service Mesh".
 
+What is Service Mesh?
+	it is an extra layer of software which we deploy along with our cluster.
