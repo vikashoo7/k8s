@@ -24,6 +24,7 @@ Cluster AutoScaler Theory
         * mixture of on-demand and spot-instances possible
 
 Cluster AutoScaler Part
+
     - create dedicated nodegroups with autoscaling enabled
         * 2 nodegroups with single AZ(e.g for stateful worloads)
         * 1 nodegroup across 3 AZs using spot instances(e.g for stateless workloads)
