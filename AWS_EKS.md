@@ -12,3 +12,13 @@ NodeGroups & Spot Instances
     - To delete a nodegroup in the cluster
           #eksctl delete nodegroup --config-file=<eks-yaml-file.yml> --include=<node-group-name> --approve
   
+Cluster AutoScaler Theory
+
+    - Cluster Autoscaler - How it works
+        * Responsible for dynamically scale the nodes within a nodegroup, in and out.
+        * Run as deployment
+        * decides based on CPU & RAM availability
+        * Multi-AZ vs Single-AZ scaling
+            - nodegroup with single AZ => for stateful workloads
+            - nodegroup multi AZ => for stateless worloads
+        * mixture of on-demand and spot-instances possible
