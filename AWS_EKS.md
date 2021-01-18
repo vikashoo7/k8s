@@ -22,3 +22,15 @@ Cluster AutoScaler Theory
             - nodegroup with single AZ => for stateful workloads
             - nodegroup multi AZ => for stateless worloads
         * mixture of on-demand and spot-instances possible
+
+Cluster AutoScaler Part
+    - create dedicated nodegroups with autoscaling enabled
+        * 2 nodegroups with single AZ(e.g for stateful worloads)
+        * 1 nodegroup across 3 AZs using spot instances(e.g for stateless workloads)
+
+    - deploy the autoscaler
+        * create deployment
+        * add annotation to the deployment to prevent from being evicted
+        * set matching images version and cluster name in deployment
+    - create nginx deployment and scale it up/dewn
+    - view autoscaler logs
