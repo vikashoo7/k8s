@@ -1,0 +1,26 @@
+K8s error
+############
+coredns crashloopbackoff
+
+to resolve this apply the below patch
+ref : https://github.com/kubernetes/kubeadm/issues/998
+
+server debuging
+https://kubernetes.io/docs/tasks/debug-application-cluster/debug-service/
+https://kubernetes.io/docs/tasks/administer-cluster/dns-debugging-resolution/
+
+=====================================================================================
+
+network plugin installation -- funnel
+
+kubectl apply --filename https://git.io/weave-kube-1.6
+
+=============================================================================================
+Error: chown changing ownership of '/var/lib/mysql/' operation not permitted
+
+This happen due to persistent volume confugred with NFS
+
+Solution:
+Add "no_root_squash" to the NFS export file.
+
+==================================================================================
