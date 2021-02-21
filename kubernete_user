@@ -1,0 +1,19 @@
+Providing the Access to the user to kubernetes cluster?
+
+Steps:
+  1. User need to create the certificate and send it to kubernetes admin
+      #openssl genrsa -out john.key 2048
+      #openssl req -new -key john.key -out john.csr -subj "/CN=john/O=finance"
+      
+  2. Kubernetes admin need to sign the certificate by using "ca.crt" and "ca.key"
+      #kubectl --kubeconfig john.kubeconfig config set-cluster kubernetes --server https://192.168.1.200:6443 --certificate-authority=ca.crt
+
+  3. add the user to kube-config file
+      #kubectl --kubeconfig john.kubeconfig config set-credentials john --client-certificate /tmp/cert/john.crt --client-key=/tmp/cert/john.key
+      
+  4. Set the context to the user
+      #kubectl --kubeconfig john.kubeconfig config set-context john-kubernetes --cluster kubernetes --namespace finance --user john
+      
+  5. Edit the john.kubeconfig the below line
+      Before: current-context: ""
+      After: current-context: john-kubernetes
