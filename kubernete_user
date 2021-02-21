@@ -17,3 +17,6 @@ Steps:
   5. Edit the john.kubeconfig the below line
       Before: current-context: ""
       After: current-context: john-kubernetes
+   
+   6. Copy the john.config file to the users home directory
+      # cp john.kubeconfig ~/.kube/config
