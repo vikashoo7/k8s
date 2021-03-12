@@ -3,3 +3,9 @@ What is Istio?
 
 What is Service Mesh?
 	it is an extra layer of software which we deploy along with our cluster.
+
+Init Container - It is the container that runs before the main container.
+Kiali - it is the visualising tool for istio.
+Enabling the sidecar injection
+--------------------------------
+	
