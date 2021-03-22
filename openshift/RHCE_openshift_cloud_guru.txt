@@ -1,0 +1,71 @@
+#oc login -u <username>
+#oc whoami
+
+There are 7 default cluster role:
+-----
+	1. admin - can do anything in the cluster
+	2. basic-ser - can get basic information about project and users
+	3. cluster-admin - can do anything in the cluster but if bound with some project then the user will be linites to that project only
+	4. cluster-status- can get the basic cluster status information
+	5. edit - can modify most objects in the project but does not have the poer to view or modify roles or binding.
+	6. self-provisioner - can create their one project. Unseful in the dev enviroenmt.
+	7. view - can see most objects in the projects only.
+
+Adding Roles
+--------
+	Add a role to a user
+		#oc adm policy add-role-to-user <role> -n project
+	Add a role to a group
+		#oc adm policy add-role-to-group <role> <group> -n <project>
+	verifiying by viewing the local rolebinding
+		#oc describe rolebinding.rbac -n <project>
+	Creating a cluster admin
+		#od adm policy add-cluster-role-to-user cluster-admin <user>
+	ERemove the kubeadm user
+		#oc delete secrets kubeadmin -n kube-system
+
+Create and Manage Groups
+----------
+	Create a new group
+		#oc adm groups new <group>
+	Create a new group with one user
+		#oc adm groups new <group> <user>
+	Add users to an existing group
+		#oc adm groups add-users <group> <user1> <user2>
+	Remove users from an existing group
+		#oc adm groups remove-users <group> <user1> <user2>
+
+
+Default Virtual Groups
+-------
+	system:authenticated
+	system:authenticated:oauth
+	system:unauthenticated
+
+Role-Based Access Controls (Creating Custom Roles)
+--------
+	Create a local role
+		#oc create role <name> --verb=<verb> --resource=<resource> - n <project>	
+	Example:
+		# oc create role podview --verb=get --resource=pod -n blue
+	Create a cluster role
+		#oc create clusterrole <name> --verb=<verb> --resource=<resource>
+	Example:
+		# oc create clusterrole podviewonly --verb=get --resource=pod
+
+Local Role Binding Commands
+-----------
+	Indicates which users can perform an action on a resource
+		# oc adm policy who-can <verb> <resource>
+	Binds a specified role to specified users in the current project
+		# oc adm policy add-role-to-user <role> <user>
+	Removes a given role from specified users in the current project
+		#oc adm policy remove-role-from-user <role> <user>
+	Removes specified users and all their roles in the current project
+		# oc adm policy remove-user <user>
+	Binds a given role to specified groups in the current project
+		#oc adm policy add-role-to-group <role> <group>
+	Removes a given role from specified groups in the current project
+		# oc adm policy remove-role-from-group <role> <group>
+	Removes specified groups and all their roles in the current project
+		# oc adm policy remove-group <group>		
