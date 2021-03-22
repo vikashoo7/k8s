@@ -68,4 +68,15 @@ Local Role Binding Commands
 	Removes a given role from specified groups in the current project
 		# oc adm policy remove-role-from-group <role> <group>
 	Removes specified groups and all their roles in the current project
-		# oc adm policy remove-group <group>		
+		# oc adm policy remove-group <group>	
+
+Cluster Role Binding Commands
+---------
+	Binds a given role to specified users for al projects in the cluster
+		#oc adm policy add-cluster-role-to-user <role> <user>
+	Remove a given role from specified users for all projects in the cluster
+		#oc adm policy remove-cluster-role-from-user <role> <user>
+	Binds a given role to specified groups for all projects in the cluster
+		#oc adm policy add-cluster-role-to-group <role> <group>
+	Remove a given role from the specified groups for all projects in the cluster
+		#oc adm policy remove-cluster-role-from-group <role> <group>
