@@ -1,0 +1,17 @@
+* Download the minikube
+	https://github.com/kubernetes/minikube/releases
+
+* Download the kubectl
+	https://dl.k8s.io/release/v1.23.0/bin/windows/amd64/kubectl.exe
+
+* Set the environment variable for kubectl
+	provide the path of kubectl in the path
+
+* Rename the minibuber binary to "minikube.exe"
+
+* Run the below command to start the minikune
+	#minikube start
+	#minikube start --vm-driver=virtualbox (if above command do not work
+  
+* To stop the minikune
+  #minikube stop
