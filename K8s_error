@@ -24,3 +24,11 @@ Solution:
 Add "no_root_squash" to the NFS export file.
 
 ==================================================================================
+
+Error
+-------
+err="failed to run Kubelet: misconfiguration: kubelet cgroup driver: systemd is different from docker cgroup driver: cgroupfs
+
+Solution:
+https://www.programmerall.com/article/57231708132/
+================================================================================================
