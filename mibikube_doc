@@ -1,0 +1,35 @@
+installing the minicude
+-------------------------
+	1. Donwnload the minikube
+		#curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+
+	2. Install the minikube
+		# sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+	3. Check the minikube version
+		#minikube version
+
+	4. To start the minikube 
+		#minikube start
+
+	5. Enable ingress
+		#minikube addons enalbe ingress
+
+	6. see the minikube IP
+		#minikube ip
+
+	7. install the kubectl
+		a. Donwload the kubectl binary
+			#curl -LO "https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl"
+		b. provide the execute the process 
+			#chmod +x kubectl
+		c. Move to bind directory
+			#mv kubectl /usr/local/bin/
+		d. Check the kubernetes version
+			#kubectl version --short
+
+	8. Checking the minikube status
+		#minikube status
+
+Installing the helm
+--------------------
