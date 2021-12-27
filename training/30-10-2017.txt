@@ -1,0 +1,262 @@
+
+
+Login ID: .\training
+
+
+
+Password: password-1
+
+
+9894947178 - Mohan
+gustuser030
+
+10.0.1.24 22
+
+root
+redhat
+======================
+commands
+--------
+
+hostnamectl set-hostname dockerbuild
+echo "10.0.2.4 dockerbuild" >> /etc/hosts
+systemctl stop firewalld
+ systemctl disable firewalld
+
+docker document link
+https://docs.docker.com/engine/userguide/
+
+
+docker run -t -i ubuntu /bin/bash
+
+docker info	//tell weather docker is running or not. also 
+
+
+docker run ubuntu /bin/echo 'Hello world' 		// it is use to run the container
+
+docker images		//show the images avaible  in the server
+
+by default, the docker takes the latest image
+
+
+docker ps -a		//it will show the running or stop command
+
+when ever we ran any command  and if it exit then container will also exit.
+
+first, it will check the image locally, then it will go to the docker hum and then download the image locally. and once the command exit then image will also exit
+
+
+docker run -t -i ubantu  /bin/bash -- using for the debug purposr. -t=terminal , -i=interactive
+
+
+docker run -it ubuntu bash
+
+docker run -d ubuntu /bin/sh -c 'while true; do echo hello world; sleep 1; done'   //-d running on docker command
+
+==================================================================================================
+
+images is store in the "/var/lib/docker/containers"
+
+docker images  -a 	//list all the images includes hidden images.
+ docker inspect c59f17fe53b0	//list imformation about the images
+docker  pull  mysql:5.6		//it will the images fromt the hub without running it.
+ docker  history c59f17fe53b0	//LIST THE HISTORY OF THE IMAGES
+
+copy-can only work from  the bas machine but Add-content of the dirctory. Also in using add we can use URL
+
+
+Docker file
+------------
+FROM centos:latest
+MAINTAINER vikash@gmail.com
+RUN yum -y upade
+ENV DB_NAME=test DB_PASSWORD=test DB_USER=admin DB_HOST=appdb.cand1.com
+ADD index.html /var/www/html/index.html
+
+RUN yum -y install httpd
+EXPOSE 80
+
+CMD ["httpd", "-D", "FOREGRPUND"]
+
+------------------
+FROM centos:latest
+MAINTAINER mohanraz@gmail.com
+RUN yum -y update
+RUN yum -y install httpd
+ENV DB_NAME=testdb DB_PASSWORD=test DB_USER=admin DB_HOST=appdb.candl.com
+ADD index.html /var/www/html/index.html
+EXPOSE 80
+CMD ["httpd", "-D", "FOREGROUND"]
+
+===============================
+docker build -t myapache:1.0 .
+docker history myapache:1.0
+
+
+docker run -d -p 80:80 myapache:1.0
+
+======================================================================================
+https://hub.docker.com/r/bartekmis/ubuntu-apache/~/dockerfile/
+=========================
+
+FROM ubuntu:zesty
+RUN apt-get -y update
+RUN apt-get -y apache2
+ADD index.html /var/www/html/index.html
+EXPOSE 80
+CMD ["apache2ctl", "-D", "FOREGROUND"]
+-----------------
+docker ps
+docker stop image name
+docker rm  image name
+
+
+-----------------------------
+refrence:
+https://dockerbook.com/TheDockerBook_sample.pdf
+------------------------------------
+docker run -d myjava:1.0
+docker ps -a
+docker logs nams
+
+===========================================
+
+ docker network ls  //hist the available netwotrk
+
+==============================================
+
+9611046506 -Mohan
+
+======================================
+Jason link
+https://docs.docker.com/engine/reference/commandline/dockerd/#miscellaneous-options
+
+
+docker -H 10.0.2.4:2376 stats //list the currne tstatus of the server
+
+docker run -d  --name my-prometheus     --mount type=bind,source=/tmp/prometheus.yml,destination=/etc/prometheus/prometheus.yml     --publish 9090:9090/tcp     prom/prometheus
+ //prometheus setup
+
+
+//assiging the mmenry 
+docker run --memory=200m -dit --restart unless-stopped --name tetmen1 redis
+
+=============================
+
+docker-machine --create -d virtualbox default
+
+docker-machine ssh default
+
+docker-machine env default
+
+docker-machine ls	//list all the matchine
+docker-matchine ip manager1
+
+=============================
+192.168.99.102
+
+docker swarm join --token SWMTKN-1-59v8x2n2fu9qdf3ii7thynxrbtg4bh1yjcfv9ibjvt71gkmigg-0sg01stxu314qrwj48c6k34zw 192.168.99.102:2377
+
+quram link
+https://docs.docker.com/engine/swarm/admin_guide/#add-manager-nodes-for-fault-tolerance
+
+eval $("C:\Program Files\Docker Toolbox\docker-machine.exe" env manager1)
+
+docker service create nginx	//create a service
+docker service list		//list the service
+docker service ps x13ms2yb4oem	//explain about the service
+docker service create --name web  --replicas 2  nginx	 //create the multiple  service
+
+docker service update --publish-add 8080:80 web	//update the port
+
+//prmote the node
+docker node promote y7t14iyucb1hypga0ig0wc6lz
+
+============================================================
+
+apt-get install net-tools iputils-ping	//install the ping within the cointainer
+
+
+docker service create --name registryweb \  -d \  -e ENV_DOCKER_REGISTRY_HOST=10.0.2.15 \  -e ENV_DOCKER_REGISTRY_PORT=5000 \  -p 8000:80 \  konradkleine/docker-registry-frontend:v2
+
+
+code
+----
+version: '3'
+services:
+  web:
+    image: 127.0.0.1:5000/stackdemo
+    deploy:
+      replicas: 3
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+    volumes:
+      - type: volume
+        source: code
+        target: /code
+  redis:
+    image: redis:alpine
+    deploy:
+      replicas: 3
+volumes:
+  code:
+
+-------------------------------
+
+version: '3'
+services:
+  web:
+    image: 127.0.0.1:5000/stackdemo
+    deploy:
+      replicas: 3
+    ports:
+      - "8040:8000"
+    depends_on:
+      - redis
+    volumes:
+      - code:/code
+  redis:
+    image: redis:alpine
+    deploy:
+      replicas: 3
+volumes:
+  code: {}
+
+
+=========================
+
+https://docs.docker.com/compose/install/
+======================================
+kubernet
+
+https://kubernetes.io/docs/setup
+
+
+
+export KUBECONFIG=/etc/kubernetes/admin.conf 
+
+
+
+-------------------------------
+
+Network Flannel Driver configuration 
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/v0.9.0/Documentation/kube-flannel.yml
+Client Configuration
+export KUBECONFIG=/etc/kubernetes/admin.confkubectl get nodes
+kubectl -n kube-system get pods
+
+-----------------------------------------
+
+systemctl stop firewalld ; systemctl disable firewalld
+
+hostnamectl set-hostname kube-minion1
+
+===================================
+
+kubectl get namespace
+	
+kubectl describe deployment nginx-name
+
+kubectl describe rs

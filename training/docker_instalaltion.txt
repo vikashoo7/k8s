@@ -1,0 +1,17 @@
+Docker installation
+-------------------
+yum update -y
+yum install -y docker
+service docker start
+docker info		//check weather docker installed or not
+
+
+Create a Docker Image
+---------------------
+
+
+launching the web application
+------------------------------
+docker run --name docker-nginx -p 80:80 -d -v ~/docker-nginx/html:/usr/share/nginx/html nginx
+docker run --name docker-centos -p 80:80 -d -v ~/docker-centos/html:/var/www/html  httpd
+
