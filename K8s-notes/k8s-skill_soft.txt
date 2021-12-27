@@ -1,0 +1,272 @@
+KUBERNETES CLUSTERS
+-----------------------
+
+Creating a cluster
+------------------
+
+Creating clustrer in the google cloud
+	set the default project and default zone
+	#gcloud config set project peaceful-signer-194319
+	#gcloud config set compute/zone us-central
+
+	get the k8s Engine server config
+	#gcloud container get-server-config 
+	
+	Create (start) a cluster on Google Cloud Platform with 2 nodes and cluster version 1.9.2
+	#gcloud container clusters create mycluster --num-nodes=2 --cluster-version 1.9.2-gke.1
+
+	#kubectl version	##display the version of the cluster
+	#kubectl get all	##dipslay the list of the services in the cluster
+
+Resize the cluster
+	list existing cluster in the default zone for running containers
+	#gcloud container cluster list
+
+	Resize the cluster, we will change it to one single Node in the Node pool
+	#gcloud container clusters resize mycluster --size 1
+
+Stoping a cluster
+	List existing cluster  in the default zone for running containers
+	#gcloud container cluster list
+
+	Although you cannot really 'stop' a cluster on GCP you can ensure that no Pods are going to be deployed by setting the number of nodes to 0
+	#gcloud container clusters resize mycluster --size=0
+	#gcloud get all ##list inforamtion about the cluster
+
+Deleting a cluster
+	#gcloud container cluster list	##list the cluster
+	#gcloud container clusters delete mycluster --zone=us-central-a --async
+		--async doesnot wait for the operation to complete returns to the prompt immediately
+
+Upgrading a cluster
+	#gcloud container cluster list	##list the cluster
+	
+	to find the supported K8s master and node version for upgrade
+	#cloud container get-server-config
+
+	Note: you cannot upgrade the cluster Nodes at the same time as the master.
+		Nor can you upgrade  the cluster master more than one minor version at a time. Example: you can upgrade the cluster from the ver 1.7.x to 1.8.x and then to 1.9.x but you cannot upgrade directly from 1.7 to 1.9.x
+	#gcloud container clusters upgrade mycluster --master --cluster-version 1.9.2-gke.1
+	#gcloud container cluster list	##list the cluster
+
+	Now that the master is upgraded, upgrade node to the version that the master is running
+	#gcloud container cluster upgrade mycluster
+
+Understanding the kubeconfig
+	The loading order of kubeconfig files is:
+		1. if the --kubeconfig flag is set, use the specified file, do not merge, & only one instance of the flag is permitted.
+		2.if that flag is not set and an optional KUBECONFIG environment variables exists, it contains a list of kubeconfig files that should be merged
+		3.Otherwise, use the default kubeconfig file: ~/.kube/config, with no merging
+
+	Here is where the default is kubeconfig file is located and its named config
+		#ls ~/.kube
+
+	if you want to look at the file, you can  'cat ~/.kube/config', just be aware that your certifiacte-authority-data will be in full view if you do - so better to just type
+		#kubectl config view
+
+	To easily manipulate and use kubeconfig files, there are a series of SUBCOMMANDS to use with 'kubectl config'
+		#kubectl config SUBCOMMAND
+		#kubectl config --kubeconfig=d-config get-clusters	##list the development cluster
+		#kubectl config --kubeconfig=p-config get-clusters	##list the production  server
+		#kubectl config get-clusters		##list the all the cluster
+
+Sharing a cluster
+	#kubectl get namespaces		##list the name spaces
+	we are creating 2 namespace (dev and test) and sharing both the namespace with each other
+	
+	ymal file for dev
+apiVersion: v1
+Kind: Namespace
+metadata:
+ name: dev
+ labels:
+  name: dev
+
+	ymal file for test
+apiVersion: v1
+Kind: Namespace
+metadata:
+ name: test
+ labels:
+  name: test
+
+	Creating the namespace
+	#kubect create -f dev.yml
+	#kubectl create -f test.yml
+	#kubectl get namespaces --show-labels
+
+	Set some context in the configuration for the cluster
+	#kubectl config set-context dev --namespace=dev --cluster=minikube --user=jeo-dev
+	#kubectl config set context test --namespace=test --cluster=minikube --user=jeo-test
+	#kubectl config use-context dev
+	#kubect	config current-context
+
+	Create a deployment in the dev context
+	#kubectl run nginx --image=nginx --replicas=3
+
+	#kubectl get all	##display the information about all the host
+
+
+Authenticating Clusters
+	On the GCP, add a user with IAM and give user the role Kubernetes Engine Viewer to get read-only access to kubernetes engine resource.
+	
+	
+Creating an Alpha Cluster
+	Do not use alpha cluster or alpha features for production workloads!
+	Alpha cluster have some limitation
+		1. They are not covered by the k8s SLA
+		2.They cannot be upgraded
+		3.They are automatically deleted after 30 days
+
+Using Cluster Autoscaler
+	To create an autoscaller cluster use 'gcloud container clusters create'
+		'--enables-autoscaling' enables autoscaling
+		'--min-nodes' is  the minimum number of nodes for the default node pool.
+		'--max-nodes' is the maximum number of nodes for the default node pool
+	#gcloud container clusters create mycluster --num-nodes 1 --enable-autoscaling --min-nodes 1 --max-nodes 5
+	
+
+###########################################################################################################
+Kubernetes API component
+---------------------------
+
+	COMPONENT OF KUBERNETES MASTER
+	1. KUBE-APISERVER - it exposes the k8s API. it i sthe front end of the k8s control plane. it is also designed such that is scales horizantally.
+	2.ETCD - it is highly available key value store and it is used as k8s store for all cluster data. it is highly recommended to maintain a backup for this data store.
+	3.KUBE-SCHEDULER - it watches for a newly created pods that have  not been assigned to a node and then subsequently selects a node for them to run on.
+	4.KUBE-CONTROLLER-MANAGER - it is resposible for running controllers. Each controller is a saparete logical process. All controller processes are complied into a single binary and run in a single process. This includes node controller, replication controller, end points controller and the service account and token controllers.
+	5.CLOUD-CONTROLLER-MANAGER - it runs controllers that intract with core cloud providers. Cloud controllers that include cloud provider dependencies are node controllers, route controllers, service controllers and volume controllers.
+
+	#kubectl cluster-info	##it will  provide the bref information about the master
+	#kubectl get cs		##to see component statuses. cs means component status
+
+Kubernetes Nodes and Addons
+	KUBERNETES NODES COMPONENT
+	1. KUBELET - It is an agnet that runs on each node in the cluster and is used to ensure that containers are running in a pod. it uses a set of pod space and ensures that the containers describe in those pod specs are running and in a healthy state. it does not manages containers which were not created by K8s.
+	2.KUBE-PROXY - it enables the k8s service abstraction. it maintains network rules on the host and performs any required connection forwarding.
+	3.CONTAINER RUNTIME - it is the software resposible for running containers. Currently, K8s supports both Docker and Rocket containers.
+
+	ADDONS - are pods and services used to implement cluster features.
+		namespace ADDONS  are created in the kube's system namespace.
+	1. DNS - All k8s clusters should have cluster DNS. Cluster DNS is a DNS server. it serves up DNS records for k8s service. Container that are started up by K8s include this DNS server in their DNS search automatically.
+	2. WEBUI (DASHBOARD) - This is a web-based user interfce for k8s clusters, which allows user to manage and troubleshoot the cluster as well as applications running in the cluster.
+	3. CONTAINER RESOURCE MONITORING - it monitors and record generic time series metrics regarding containers and then stores the data in a central database. it also provides a user interface for examing the recorded data.
+	4. CLUSTER-LEVEL LOGGING - it provides a means for saving container logd to a central log store and include an interface for searching and viewing the logs.
+
+	#kubectl get no -o wide		##get information about nodes
+
+KUBERNETES API
+	1. API VERSIONING - k8s support multiple API versions. Each accessed at a different API path. Note that, the version is set at the API level instead of at the resource or field level. It ensures that the API provides a stable and uniform view of system resource and behavior. API versioning and K8s software versioning are indirectly related. Below is the types of API:
+		ALPHA - With alpha, the version names contain the word alpha. For eample, v1 alpha one. Alpha level version may contain bugs. At alpha level, a feature may be dropped without notice and any time. This level is recommended only for short duration testing.
+		BETA - Beta level version contain the word beta. For example, v1 beta two. it is well tested and considered to be stabe software. So enabling this feature consider to be safe. it is recommended for non-critical applications only.
+		STABLE - In stable version, the version name is v and a number. for example, in stable version you would just have v1.
+	2. API GROUPS
+		ENABLE API GROUPS
+		ENABLE RESOURCE IN API GROUPS
+
+AUTOSCAKING API
+	Create an Nginx deployment
+	#kubectl create deploy nginx --image=nginx
+
+	run a proxy to expose the APi
+	#kubectl proxy --port=8080
+
+	
+BATCH API
+	It allow us to view and manage jobs. it uses the Pod template to specifiy the specific ing to create. it supported by "kubectl".
+
+	Ymal file for jobs
+
+apiversion: batch/v1
+metadata: 
+ name: pi
+kind: Job
+spec:
+ template:
+  spec:
+   containers:
+   - name: pi
+     image: perl
+     command: {"perl", "-Mbignum=bpi", "-wle", "print bpi(1000)"}
+   restartPolicy: Never
+ backoffLimit: 3 
+
+	Create the Job
+	#kubectl create -f location_to_file.yml
+
+	Check the status of the job
+	#kubectl describe jobs/pi
+
+	Run the kubectl proxy to expose the API
+	#kubectl proxy --port=8080
+
+	
+Apps API
+	it allow us to create and manage workload resource which are resposible for managing and running containers on the cluster. Containers are created by controllers via pods. it is suppoerted by "kubectl".Two of the most common controllers are:
+		1.deployment or stateless persistent apps, like web servers.
+		2. stateful sets for stateful persistent apps, like databases.
+
+	yaml file for deployment
+
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+ name: ngnix-deployment
+ labels:
+  app: ngnix
+spec:
+ replicas:
+ selector:
+  matchLabels:
+   app: ngnix
+ template:
+  metadata:
+   labels:
+    app: nginx
+  spec:
+   containers:
+   - name: nginx
+     image: nginx
+     ports:
+     - containerPort: 80
+
+	Create the deployment
+	#kubectl create -f path_to_the_file.yaml
+	
+	Check the status
+	#kubectl get deploy ngnix-deployment
+
+	run kubectl proxy to expose the API
+	#kubectl proxy --port=8080
+
+Extensions API
+	It allows us to extend kubernetes by running additional services.
+
+
+Kube-apiserver
+	it is one of the master component. It exposes the kubernetes API. So it is the front end for the kubernetes control plane. it is designed in such a way that it scales horizontally. it is stateless and stores all data in SD store.
+	SD is a highly scalable key value store and it is used as the kubernetes store for all cluster data.
+
+
+kube-controller-manager
+	it is the master componenet that runs the controller. Each controller is a separate logical process. All controller processess are compiled into a single binary and run in a single process. This includes the node controller, which monitors and responds when nodes have trouble or are unhealth or go down.
+	Replication controller which maintains the desired number of pods for each replicaion controller object.
+	End point controller resposible for populating the endpoints object, which basically joins services and pods.
+	The service account and token controller resposible for creating API access tokens and default accounts for new namespaces.
+	Essentially, all these controller managers monitor the state of the cluster using the API.
+
+
+Kube-scheduler
+	It watches for newly crearted pods that that haven't been assigned to a node and subsequently selects a node to run on them.
+	It takes a number of factors into account for making scheduling decisions including individual and collective resource requirement, data locality,a ny hardware, software, or policy constraints, inner-workload interference and dead lines.
+	it is a master component.
+	
+
+kube-proxy
+	It is a node component that runs on a every node and it enables the kubernetes service abstraction. It maintains network rules on the host and performs any required connection forwarding.
+ 
+
+
+Kubelet
+	it is an agent that runs on each node in a cluster. Its used to ensure that containers are running  in a pod. It uses a set if pod specs that we provide and ensures that the containers describe in those pod specs are running and are in healthy state.
+	It does not manage containers which weren't created by kubernetes.

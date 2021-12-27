@@ -1,0 +1,51 @@
+K8s
+
+connect the repo below is the detail:
+
+[k8s]
+name=k8s
+baseurl=http://cbs.centos.org/repos/virt7-docker-common-release/x86_64/os/
+gpgcheck=0
+
+
+#configure the DNS
+
+Install the kubernet and docker
+#yum install --enablerepo=k8s  kubernetes docker
+
+Configure the master
+	change the configuration as per below
+	#vi /etc/kubernetes/config
+	
+	[root@k8s kubernetes]# cat config
+###
+# kubernetes system config
+#
+# The following values are used to configure various aspects of all
+# kubernetes services, including
+#
+#   kube-apiserver.service
+#   kube-controller-manager.service
+#   kube-scheduler.service
+#   kubelet.service
+#   kube-proxy.service
+# logging to stderr means we get it in the systemd journal
+KUBE_LOGTOSTDERR="--logtostderr=true"
+
+# journal message level, 0 is debug
+KUBE_LOG_LEVEL="--v=0"
+
+# Should this cluster be allowed to run privileged docker containers
+KUBE_ALLOW_PRIV="--allow-privileged=false"
+
+# How the controller-manager, scheduler, and proxy find the apiserver
+#KUBE_MASTER="--master=http://127.0.0.1:8080"
+KUBE_MASTER="--master=http://k8s.example.com:8080"
+
+KEBU_ETCD_SERVERS="--etcd-server=http://k8s.example.com:2379"
+
+
+
+	Configure the ETCD 
+
+

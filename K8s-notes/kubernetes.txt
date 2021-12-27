@@ -1,0 +1,1617 @@
+K8s has two different layers:
+	Master - it is responsible for schedulinh, provisioning, controlling, exposing the API to the client which can be done API, user interfce, or  command line interface.K8s understand declearating artifacts whcih are defined basically using YAML. These YAML definations are submitted to the master. Depending on the defination, the constraints and the reules, the k8s master will schedule the pods or the atrifcats that we have suubmitted to one of the nodes. it also follow mastrer and slave  architecture where masrter is resposible for the front ending operations and the nods that participate in the distrubted computing and form a cluster
+	nodes
+
+The registery plays an impoertant reole. This can be staore the centrally either in the pubilc registry or in the private registry. like docker hub, google cotainer register etc.
+
+K8s master, At the high level there is 3 componenet that go with the k8s master
+	API Server - resposible for exposing variours API. Infact k8s is highly API centerd.it is exposing the API for almost every API.The most power full tool to deal with the K8s is "kubectl" which is basically very small go lanugage binary.
+	Scheduler - resposible for physically scheduling the artifacts which could be containers or pods accross multiple nodes.
+	Controller - resposible for the overall codinating and health of the entire cluster. it is going to be the condutor and the cordinator insuring that the nodes anr up and running and the pods are behaving the right way and desired state of the configation ia maintained all  the time.
+	Etcd - it is destributed key value database which is very light weight, developed by core OS. it is the central database to store the current cluster state.
+
+Tipically master will not run the container or it will not schedule any of the pods or container by itself
+
+The typical node in the kubernetes contains "kube-proxy" which very very importtant element of k8s-cluster and it is responsible for maintiang the entire network configration. it manupulates IP tabes on the each node. it maintains the distrubed network accross all the nodes, pods, container. it also expose services. it is esentially the core networking  component of the k8s.
+
+Node will run on the docker.
+
+"kubelet" - it is the agent that is resposible for the talking to the API and the master. it will report the health  matrix, current state of the node to etcd as well as k8s master.
+
+"Supervisord" - it is a procerss manager where we can run multiple process inside one parent process.
+
+"fluentd" - it is reposible for managing the logs and talking to the central logging mecanism if we configure.
+
+
+Every cluster contains multiple node and multiple master.
+
+
+Core Elements of kubernetes
+---------------------------
+Group of one or more container that are always co-located, co-scheduled, and run in a shared context
+
+Container in the same pod have the same hostname
+
+Each pod is isolated by
+	Process ID(PID) namespace
+	Network namespace
+	Interprocess communication (IPC) namespace
+	Unix Time Sharing (UTS) namespace
+
+Alternatevely to VM with multiple processes
+
+Labels are the essentials glue to associate one API object with other
+	Replication Controller-> Pods
+	Service -> Pods
+	Pods -> NOdes
+
+
+The fundamental unit of deployment is Pod. It can run multiple container.
+
+Services
+--------
+An abstraction to define a logical set of Pods bounded by a policy by to access them
+Service are exposed through internal and external endpoints.
+Service can also point to non-k8s endpoints theough a Virtual-IP-Bridge
+Supports TCP and UDP
+Interface with kube-proxy to manipulate iptables
+Service can be exposed internal or external to the cluster
+
+NOde POrt - it is the node port which is exposed to the world.
+
+
+=======================================================================================
+
+Pratical
+-----------
+
+#kubectl geyout the node in the cluster
+#kubectl cluster-info	##this will tell what is running inside the cluster
+#kubectl get cs		##this will list the componet status of the cluster
+
+
+Packaging the redis container as a pod
+
+#vi db-pod.yml
+
+
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: redis
+  labels:
+    name: redis
+    app: demo
+spec:
+  containers:
+    - name: redis
+      image: redis:latest
+      ports:
+        - containerPort: 6379         
+          protocol: TCP
+
+
+
+
+
+#vi web-pod.yml
+
+
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: web
+  labels:
+    name: web
+    app: demo
+spec:
+  containers:
+    - name: web
+      image: janakiramm/web
+      ports:
+        - containerPort: 5000
+          name: http
+	  protocol: TCP
+
+
+
+How the web discover the DB?
+	With the help of service, web will connect with the redis database.
+
+
+#vi db-svc.yml
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    name: redis
+    app: demo  
+spec:
+  ports:
+  - port: 6379
+    name: redis
+    targetPort: 6379		##traffic will redirect to 6379 port
+  selector:
+    name: redis
+    app: demo
+
+
+
+
+Deploying the first pod which is DB [pd.
+
+#kubectl create -f db-pod.yml
+#kubectl get pods
+
+Creating the DB service
+#kunectl create -f db-svc.yml
+#kubectl get svc
+
+
+Creating the web application
+#kubectl create -f web-pod.yml
+#kubectl get pods
+
+Creating the service for the web applicaiton
+#kubectl create -f web-svc.yml
+#kubectl get svc
+
+
+#kubectl describe pod web	##provide the full infomation of the node.
+
+
+
+
+
+----------------------------------------------------
+
+Replication controller
+----------------------
+Ensure tha a Pod or hemogenous set of Pods are always up and available.
+Always maintains desired numbers of Pods
+	if there are excess, they get killed
+	New pods are launched when they fail, get deleted, or terminated
+Creating a replication controller with a count of 1 ensure that a Pod is always available.
+Replication Controller and POds are associated theough Lebels.
+
+
+
+Pratical
+--------
+
+#vi web-rc.yml
+
+
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: web
+  labels:
+    name: web
+    app: demo
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        name: web
+    spec:
+      containers:
+        - name: web
+          image: janakiramm/web
+          ports:
+            - containerPort: 5000
+              name: http
+	      protocol: TCP
+
+
+
+Creating the replciaiton for web applicaion
+#kubectl create -f web-rc.yml
+#kubectl get rc
+
+scaling the web applicaion
+#kubectl scale rc web --replicas=10
+
+####################################################################
+####################################################################
+
+Ref:- https://github.com/janakiramm/Kubernetes-multi-container-pod
+
+A Closer Look at Pods and Replica Sets
+=======================================
+
+What is Pod?
+A group of one or more containers that are always co-located and co-scheduled that share the context.
+COntainers in a pod share the same IP address, ports, hostname and storage
+Modeled like a virtual machine:
+	Each container represents one process
+	Tightly coupled with other containers in the same pod
+Pods are scheduled in Nodes.
+Fundamental unit of deployment in kubernetes.
+
+
+
+#kubectl get nodes
+#vi my pod.yaml
+
+apiVersion: "v1"
+kind: Pod
+metadata:		##it helps the K8s to indentify the object
+ name: mypod
+ labels:
+  app: demo
+  env: test
+Spec:
+ containers:
+  - name: nginx
+    image: nginx
+    ports:
+     - name: http
+       containerPort: 80
+       protocal: TCP
+
+
+#kubectl create -f mypod.yml
+#kubectl get pods
+#kubectl describe pods mypod
+#kubectl get pod
+
+
+#kubectl expose pod mypod --type=NodePort    ##Pod will expose to outside world and create a service automatically
+
+Container within the same pod communicates with each pod using IPC
+Container can find each other via localhost
+Each container inherits the name of the pod
+Each pod has an IP address in a flat shared networking space
+Volumes are shared by container in pod
+
+Use Cases for Pod
+------------------
+Content managemnt system, fileand data loaders, local cache manager, etc
+Log and checkpoint backup, compression, roration, snapshotting etc.
+Data change watchers, log trailer, logging and monitoring adapters, event publishers etc.
+Proxies, bridge and adapters
+Controllers, managers, configurators and updaters.
+ 
+
+
+Deploying multi-container in the POd
+--------------------------------------
+
+#vi db-pod.yml
+
+
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: mysql
+  labels:
+    name: mysql
+    app: demo
+spec:
+  containers:
+    - name: mysql
+      image: mysql:latest
+      ports:
+        - containerPort: 3306         
+          protocol: TCP
+      env: 
+        - 
+          name: "MYSQL_ROOT_PASSWORD"
+          value: "password"
+
+
+
+#vi db-svc.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels:
+    name: mysql
+    app: demo  
+spec:
+  ports:
+  - port: 3306
+    name: mysql
+    targetPort: 3306
+  selector:
+    name: mysql
+    app: demo
+
+
+#vi web-pod-1.yml
+
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: web1
+  labels:
+    name: web
+    app: demo
+spec:
+  containers:
+    - name: redis
+      image: redis
+      ports:
+        - containerPort: 6379
+          name: redis
+          protocol: TCP
+    - name: python
+      image: janakiramm/py-red
+      env:       
+        - name: "REDIS_HOST"
+          value: "localhost"
+      ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP   
+
+
+
+
+#vi web-pod-2.yml
+
+
+apiVersion: "v1"
+kind: Pod
+metadata:
+  name: web2
+  labels:
+    name: web
+    app: demo
+spec:
+  containers:
+    - name: redis
+      image: redis
+      ports:
+        - containerPort: 6379
+          name: redis
+          protocol: TCP
+    - name: python
+      image: janakiramm/py-red
+      env:       
+        - name: "REDIS_HOST"
+          value: "localhost"
+      ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP 
+
+
+#vi web-rc.yml
+
+
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+  name: web
+  labels:
+    name: web
+    app: demo
+spec:
+  replicas: 10
+  template:
+    metadata:
+      labels:
+        name: web
+    spec:
+        containers:
+          - name: redis
+            image: redis
+            ports:
+              - containerPort: 6379
+                name: redis
+                protocol: TCP
+          - name: python
+            image: janakiramm/py-red
+            env:       
+              - name: "REDIS_HOST"
+                value: "localhost"
+            ports:
+              - containerPort: 5000
+                name: http
+                protocol: TCP   
+
+
+#vi web-svc.yml
+
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  labels:
+    name: web
+    app: demo
+spec:
+  selector:
+    name: web 
+  type: NodePort
+  ports:
+   - port: 80
+     name: http
+     targetPort: 5000
+     protocol: TCP 
+
+
+
+#kubectl create -f db-pod.yml	##creating the mysql pod
+#kunectl create -f db-svc.yml	##craeting mysql service for external access
+
+#kubectl create -f web-pod-1.yml	##create pods for python & redis contaner
+#kubectl create -f web-svc.yml	## expose the service outside the world
+
+#kubectl create -f web-rc.yml	##create the replication controller
+#kubectl scale rc web --replicas=20	##it will create the replicas of 20 pod
+#kubectl scale rc web --replicas=1	##it will reduce the replicas to 1 pod
+
+
+#########################################################################################################################################################################################################################
+
+
+KUbernetes Service
+-------------------
+
+A service is an abstraction of a logical set of Pods defined by a policy
+it acts as the intermediary for POds to talk to each other
+Selectors are used for accessing all the POds that matches a specific label
+Service is an object in K8s - similar to POds and RCs
+Each service expose one or more ports and targetPorts
+The targetPOrt is mapped to the port exposed by matching Pods
+K8s service support TCP and UDP protocols.
+
+
+
+
+Pratiacal
+----------
+
+Reference: https://github.com/janakiramm/todo-app
+
+# vi app.js
+
+var express = require('express');
+cat app = express();
+
+var port = process.env.PORT || 8080;
+var color = process.env.COLOR;
+var router = express.Router();
+
+router.get('/', function(req, res) {
+	res.json ({ 'color': color });
+});
+
+app.listen(port);
+
+app.use('/', reouter);
+
+app.listen(port);
+console.log('server Started at '+ port);
+
+
+#vi Dockerfile
+
+FROM node
+RUN mkdir -p /usr/src/app
+WORKDIR ./app/ ./
+RUN npm install
+CMD ["node", "app.js"]
+
+
+#vi color-pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: red
+ labels:
+  color: red
+spec:
+ containers:
+  - image: janakiramm/color
+    name: red
+    env:
+     - name: "COLOR"
+       value: "red"
+    ports:
+     - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: green
+ labels:
+  color: green
+spec:
+ containers:
+  - image: janakiramm/color
+    name: green
+    env:
+     - name: "COLOR"
+       value: "green"
+    ports:
+     - containerPort: 8080
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: blue
+ labels:
+  color: blue
+spec:
+ containers:
+  - image: janakiramm/color
+    name: blue
+    env:
+     - name: "COLOR"
+       value: "blue"
+    ports:
+     - containerPort: 8080
+
+
+
+#vi color-rc.yml
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+ name: red
+spec:
+ replicas: 3
+ template:
+  metadata:
+   labels:
+    color: red
+  spec:
+   containers:
+    - image: janakiramm/color
+      name: red
+      env:
+       - name: "COLOR"
+         value" "red"
+      ports:
+       - containerPort: 80080
+
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+ name: red
+spec:
+ replicas: 3
+ template:
+  metadata:
+   labels:
+    color: green
+  spec:
+   containers:
+    - image: janakiramm/color
+      name: red
+      env:
+       - name: "COLOR"
+         value" "green"
+      ports:
+       - containerPort: 80080
+
+---
+apiVersion: v1
+kind: ReplicationController
+metadata:
+ name: red
+spec:
+ replicas: 3
+ template:
+  metadata:
+   labels:
+    color: blue
+  spec:
+   containers:
+    - image: janakiramm/color
+      name: red
+      env:
+       - name: "blue"
+         value" "red"
+      ports:
+       - containerPort: 80080
+
+
+
+#vi color-svc.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+ name: red
+spec:
+ selector:
+  color: red
+ type: NodePort
+ ports:
+  - name: http
+    nodePort: 31001
+    port: 80
+    targetPort: 8080
+    protocal: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: green
+spec:
+ selector:
+  color: green
+ type: NodePort
+ ports:
+  - name: http
+    nodePort: 31002
+    port: 80
+    targetPort: 8080
+    protocal: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+ name: blue
+spec:
+ selector:
+  color: blue
+ type: NodePort
+ ports:
+  - name: http
+    nodePort: 31003
+    port: 80
+    targetPort: 8080
+    protocal: TCP
+
+
+
+deploying the yml file
+
+#kubectl get nodes
+ 
+
+Discovering Service - DNS
+--------------------------
+The DNS server watches K8s API new Service
+The DNS server creates a set of DNS records for each Service
+Service can be resolved by the name within the same namespace.
+Pods in other namespaces can access the Service by adding the namespace to the DNS path.
+	my-service.my-namespace
+K8s creates Docker Link compatible environment variables in all Pods
+Containers can use the environment variable to talk to the service endpoint
+Example:	REDIS_MASTER_SERVICE_HOST=10.0.0.11
+		REDIS_MASTER_SERVICE_PORT=6379
+		REDIS_MASTER_PORT=tcp://10.0.0.11:6379
+		REDIS_MASTER_PORT_6379_TCP=tcp://10.0.0.11:6379
+		REDIS_MASTER_PORT_6379_TCP_PROTO=tcp
+		REDIS_MASTER_PORT_6379_TCP_PORT=6379
+		REDIS_MASTER_PORT_6379_TCP_ADDR=10.0.0.11
+
+
+Service Types
+--------------
+
+CLusterIP
+	Service is reachable from inside the cluster
+
+NodePort
+	Service is reachable through <NodeIP>:NodePort address
+
+LoadBalancer
+	Service is reachable through an external load balancer mappped to <NodeIP>:NodePort address
+
+
+Pratical
+--------
+
+vi db-pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: db
+ labels:
+  name: mongo
+  app: todoapp
+spec:
+ containers:
+  - image: mongo
+    name: mongo
+    ports:
+    - name: mongo
+      containerPort: 27017
+      hostPort: 27017
+    volumeMounts:
+     - name: mongo-storage
+       mountPath: /data/db
+ volumes:
+  - name: mongo-stoage
+    hostPath:
+     path: /data/db
+
+#vi db-service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+ name: db
+ labels:
+  name: mongo
+  app: todoapp
+spec:
+ selector:
+  name: mongo
+ type: ClusterIP
+ ports:
+  - name: db
+    port: 27017
+    targetPort: 27017
+
+#vi web-pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: web
+ labels:
+  name: web
+  app: todoapp
+spec:
+ containers:
+  - image: janakiramm/todo-app
+    name: myweb
+    ports:
+     - containerPort: 3000
+
+#vi web-rc.yml
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+ name: web
+ labels:
+  name: web
+  app: todoapp
+spec:
+ replicas: 2
+ template:
+  metadata:
+   labels:
+    name: web
+  spec:
+   containers:
+   - name: web
+     image: jenakiramm/todo-app
+     ports:
+     - containerPort: 3000
+
+
+
+#vi web-service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+ name: web
+ labels:
+  name: web
+  app: todoapp
+spec:
+ selector:
+  name: web
+ type: NodePort
+ ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+
+
+#kubectl create -f db-pod.yml
+#kubectl create -f db-service.yml
+#kubectl create -f web-pod.yml
+#kubectl create -f web-rc.yml
+#kubectl create -f web-svc.yml
+
+
+
+Deploying app in the google cloud
+---------------------------------
+
+#vi db-pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: db
+ labels:
+  name: mongo
+  app: todoapp
+spec:
+ containers:
+  - image: mongo
+    name: mongo
+    ports:
+    - name: mongo
+      containerPort: 27017
+      hostPort: 27017
+    volumeMounts:
+     - name: mongo-persistent-storage
+       mountPath: /data/db
+ volumes:
+  - name: mongo-persistent-stoage
+    gcePersistentDisk:
+     pdName: mongo-disk
+     fsType: ext4
+
+
+#vi db-service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+ name: db
+ labels:
+  name: mongo
+  app: todoapp
+spec:
+ selector:
+  name: mongo
+ type: ClusterIP
+ ports:
+  - name: db
+    port: 27017
+    targetPort: 27017
+
+#vi web-pod.yml
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: web
+ labels:
+  name: web
+  app: todoapp
+spec:
+ containers:
+  - image: janakiramm/todo-app
+    name: myweb
+    ports:
+     - containerPort: 3000
+
+
+
+#vi web-rc.yml
+
+apiVersion: v1
+kind: ReplicationController
+metadata:
+ name: web
+ labels:
+  name: web
+  app: todoapp
+spec:
+ replicas: 2
+ template:
+  metadata:
+   labels:
+    name: web
+  spec:
+   containers:
+   - name: web
+     image: jenakiramm/todo-app
+     ports:
+     - containerPort: 3000
+
+
+#vi web-service.yml
+
+apiVersion: v1
+kind: Service
+metadata:
+ name: web
+ labels:
+  name: web
+  app: todoapp
+spec:
+ selector:
+  name: web
+ type: LoadBalaner
+ ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+
+
+#kubectl config use-context gke_janakiramm-sandbox_asia-east1-a_k8s-todo
+#kubectl get pod
+
+
+######################################################################################################################################################
+Storage and Persistence
+
+------------------------
+
+Pods are ephemeral and stateless
+Volumes bring persistence ro Pods
+K8s volumes are similar to Docker volumes, but managed differently
+All containers in a Pod can access the volumes
+Volumes are associated with the lifecycle of Pod
+Directories in the host are exposed as volumes
+Volumes may be based on a variety of storage backends.
+
+There are 3 ways to make the stoages strategy:
+	volumes - it will add the persistence with some limitation
+	relay on distrubuted storage like NFS chef cluster block stoage
+	configurating the work load or part of the as a statful state.
+
+Kubernetes Volume Types
+	Host-based - EmptyDir, HostPath
+	Block Stoage - Amazon EBS, GCE Persistent Disk, Azure Disk, vSphere  volume
+	Distributed file system - NFS, Ceph, Gluster, Amazon EFS, Azure File system
+	other - Flocker, iScsi, Git Repo, Quobyte
+
+Pratical
+---------
+
+volume persistance based on host
+
+#vi Pod-vol-local.yml
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: ngnix
+ labels:
+  env: dev
+spec:
+ containers:
+  - name: ngnix
+    image: ngnix
+    ports:
+     - containerPort: 80
+       name: http
+       protocal: TCP
+    volumeMounts:
+    - mountPath: /usr/share/nginx/html
+      name: my-vol
+ volumes:
+  - name: my-vol
+    hostPath:
+     path: /var/lib/my-data
+	
+	
+#kubectl get Pods
+#kubectl create -f Pod-vol-local.yml
+#kubectl describe pod ngnix
+#kubectl exec -it ngnix /bin/bash    ##directly logged into the container
+#kubectl delete -f Pod-Vol-Local.yml	##delete the pod
+
+
+Volume persistance based on the distrubeted file system.
+
+
+#vi Pod-vol-cloud.yml
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+ name: ngnix
+ labels:
+  env: dev
+spec:
+ containers:
+  - name: ngnix
+    image: ngnix
+    ports:
+     - containerPort: 80
+       name: http
+       protocal: TCP
+    volumeMounts:
+    - mountPath: /usr/share/nginx/html
+      name: my-vol
+ volumes:
+  - name: my-vol
+    gcePersistentDisk
+     pdName: my-data-disk
+     fsType: ext4
+
+
+#gcloud compute disk create --size=10GB --zone=asia-east1-a my-data-disk
+#kubectl create -f Pod-Vol-Cloud.yml
+#kubectl create -f Pod-Vol-Cloud.yml
+
+Disadvantage for these to method is, they are still not persistence.
+1. Once the pod recreate, then the host mount directory will recreate and loss the data
+2.we can attach to a disk in one server but for the other server it will only be the read only data.  So there is not fully compatiable. But data will be available once the pod recreated.
+
+
+
+Understanding Persistent Volumes and Claim
+-------------------------------------------
+PersistentVolume(PV)
+	Networked storage in the cluster pre-provisioned by an administrator
+PersistentVolumeClaim(PVC)
+	Storage resource request by a user
+StorageClass
+	Type of supported storage profiles offered by administrator
+
+Pratical
+--------
+
+#vi my-pv.yml
+
+kind PersistentVolume
+apiVersion: v1
+metadata:
+ name: my-pv
+ labels:
+  type: local
+spec:
+ capacity:
+  storage: 1Gi
+ accessModes:
+  - ReadWriteOnce
+ persistentVolumeReclaimPolicy: Recycle
+ nfs:
+  path: /opt/data/web
+  server: 10.245.1.2 
+
+
+#vi my-pvc.yml
+
+kind PersistentVolume
+apiVersion: v1
+metadata:
+ name: my-pv
+spec:
+ accessModes:
+  - ReadWriteOnce
+ resources:
+  requests:
+   storage: 1Gi
+
+
+#vi my-pod.yml
+
+
+kind: Pod
+apiVersion: v1
+metadata:
+ name: web
+ labels: 
+   name: web
+spec:
+ containers:
+  - name: web
+    image: ngnix
+    ports:
+     - containerPort: 80
+       name: "http-server"
+    volumeMounts:
+    - mountPath: "/usr/share/ngnix/html"
+      name: mypd
+  volumes:
+   - name: mypd
+     persistentVolumeClaim:
+      claimName: my-pvc
+
+
+
+#kubectl config use-context vagrant
+Already NAS is configured  in the Master
+#kubectl get pv
+#kubectl get pvc
+#kubectl create -f my-pv.yml	##persistence volume is created
+#kubectl get pv
+#kubectl create -f my-pvc.yml
+#kubectl get pv
+#kubectl get pv
+#kubectl create -f my-pod.yml
+#kubectl describe pod mypod
+#kubectl exec -it  my-pod /bin/bash
+
+
+
+######################################################################################################################################################
+
+Deploying StatefulSets in Kubernetes
+------------------------------------
+
+
+
+Persistence and COntainers
+---------------------------
+Containers are designed to be stateless
+Containers user ephemeral storage
+Pods can be made stateful through volumes
+Running databases could be challenging
+	Lack of stable naming convention
+	Lack of stable persistent storage per Pod
+
+
+Introducing StatefulSets
+
+Bringing the concept of ReplicaSet to stateful Pods
+Enables running Pods in a "cluster mode"
+Ideal for deploying highly available databases workloads
+Valuable for application that need
+	State, unique network indetifiers
+	Stable, persistent storage
+	Ordered, graceful deployment and scalling
+	Order, graceful deletion and termination
+Currently in beta - Not available in version < 1.5
+
+
+K8s StatefulSets - Key Concepts
+-------------------------------
+Depend on a Headless Service for Pod or Pod Comminication
+Each Pod gets a DNS name accessible to other Pods in the Set
+Leverages Persistent Volumes and Persistent Volume Claims
+Each Pod is suffixed with a predictable, consistent ordinal index
+	mysql-01, mysql-02
+Pods are created sequentially
+	ideal for setting up master / slave configuration
+The identity is consistent regardless of the NOde it is scheduled on 
+POds are terminated in LIFO order
+
+
+
+Pratical
+--------
+NFS storage beckend
+Persistent Volumes and Claims
+3 instances of etcd cluster with Node Affinity
+3 instances of Percona XtraDB cluster
+5 instances of WOrdPress with Horizontal Pod Autoscalling
+
+Referent: https://thenewstack.io/deploy-highly-available-wordpress-instance-statefulset-kubernetes-1-5/
+
+https://github.com/janakiramm/wp-statefulset/blob/master/etcd.yml
+
+http://tinyurl.com/kubess
+
+
+
+Configure the NFS in the master
+--------------------------------
+
+#mkdir -p /opt/data
+#chmod 777 /opt/data
+#echo "/opt/data 10.245.1.2/24(rw,sync,no_root_squash,no_all_squash)"  >> /etc/exports
+#systemctl enable --now rpcbind
+#systemctl enable --now nfs-server
+#systemctl start rpcbind
+#systemctl start nfs-server
+#mkdir -p /opt/data/vol/0
+#mkdir -p /opt/data/vol/1
+#mkdir -p /opt/data/vol/2
+#mkdir -p /opt/data/content
+
+Configure the NFS in the client server
+--------------------------------------
+#systemctl start rpcbind nfs-mountd
+#systemctl enable rpcbind nfs-mountd
+#echo "10.245.1.2:/opt/data  /mnt/data  nfs      rw,sync,hard,intr  0    0" >> /etc/fstab
+#mount -a
+
+
+#kubectl proxy	##start the GUI mode
+
+
+K8s persistance volumes and claim
+----------------------------------
+
+
+#vi vlumes.yml
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+ name: mysql-pv0
+spec:
+ capacity:
+   storage: 1Gi
+ accessModes:
+   - ReadWriteMany
+ persistentVolumeReclaimPolicy: Recycle
+ nfs:
+   path: /opt/data/vol/0
+   server: 10.245.1.2
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+ name: db-mysql-0
+spec:
+ accessModes:
+   - ReadWriteMany
+ resources:
+   requests:
+     storage: 1Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+ name: mysql-pv1
+spec:
+ capacity:
+   storage: 1Gi
+ accessModes:
+   - ReadWriteMany
+ persistentVolumeReclaimPolicy: Recycle
+ nfs:
+   path: /opt/data/vol/1
+   server: 10.245.1.2
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+ name: db-mysql-1
+spec:
+ accessModes:
+   - ReadWriteMany
+ resources:
+   requests:
+     storage: 1Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+ name: mysql-pv2
+spec:
+ capacity:
+   storage: 1Gi
+ accessModes:
+   - ReadWriteMany
+ persistentVolumeReclaimPolicy: Recycle
+ nfs:
+   path: /opt/data/vol/2
+   server: 10.245.1.2
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+ name: db-mysql-2
+spec:
+ accessModes:
+   - ReadWriteMany
+ resources:
+   requests:
+     storage: 1Gi
+
+
+#kubectl create -f volumes.yml
+#kubectl get pv
+#kubectl get pvs
+
+
+K8s service to expose the etcd endpoint for Percona XtraDB Cluseter
+---------------------------------------------------------------------
+
+#vi etcd.yml
+
+# Service to expose the etcd endpoint for Percona XtraDB Cluster
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd
+spec:
+  ports:
+  - name: etcd-2379
+    port: 2379
+    protocol: TCP
+    targetPort: 2379
+  - name: etcd-4001
+    port: 4001
+    protocol: TCP
+    targetPort: 4001
+  - name: etcd-7001
+    port: 7001
+    protocol: TCP
+    targetPort: 7001    
+  selector:
+    app: etcd
+
+---
+# Endpoint for connecting external etcd clients. Delete this if not required
+apiVersion: v1
+kind: Service
+metadata:
+  name: etcd-client
+  labels:
+    name: etcd-client
+spec:
+  type: NodePort
+  ports:
+    - port: 2379
+      name: client
+      targetPort: 2379
+      protocol: TCP
+  selector: 
+    app: etcd
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: etcd
+    etcd_node: etcd-0
+  name: etcd-0
+spec:
+  containers:
+  - command:
+    - /usr/local/bin/etcd
+    - --name
+    - etcd-0
+    - --initial-advertise-peer-urls
+    - http://etcd-0:2380
+    - --listen-peer-urls
+    - http://0.0.0.0:2380
+    - --listen-client-urls
+    - http://0.0.0.0:2379
+    - --advertise-client-urls
+    - http://etcd-0:2379
+    - --initial-cluster
+    - etcd-0=http://etcd-0:2380,etcd-1=http://etcd-1:2380,etcd-2=http://etcd-2:2380
+    - --initial-cluster-state
+    - new
+    image: quay.io/coreos/etcd:latest
+    name: etcd-0
+    ports:
+    - containerPort: 2379
+      name: client
+      protocol: TCP
+    - containerPort: 2380
+      name: server
+      protocol: TCP
+    - containerPort: 4001
+      protocol: TCP
+    - containerPort: 7001
+      protocol: TCP
+  restartPolicy: Never
+  nodeSelector:
+    name: node-1  		##it means Pods will create on Node 1
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    etcd_node: etcd-0
+  name: etcd-0
+spec:
+  ports:
+  - name: client
+    port: 2379
+    protocol: TCP
+    targetPort: 2379
+  - name: server
+    port: 2380
+    protocol: TCP
+    targetPort: 2380
+  - name: etcd-4001
+    port: 4001
+    protocol: TCP
+    targetPort: 4001
+  - name: etcd-7001
+    port: 7001
+    protocol: TCP
+    targetPort: 7001    
+  selector:
+    etcd_node: etcd-0
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: etcd
+    etcd_node: etcd-1
+  name: etcd-1
+spec:
+  containers:
+  - command:
+    - /usr/local/bin/etcd
+    - --name
+    - etcd-1
+    - --initial-advertise-peer-urls
+    - http://etcd-1:2380
+    - --listen-peer-urls
+    - http://0.0.0.0:2380
+    - --listen-client-urls
+    - http://0.0.0.0:2379
+    - --advertise-client-urls
+    - http://etcd-1:2379
+    - --initial-cluster
+    - etcd-0=http://etcd-0:2380,etcd-1=http://etcd-1:2380,etcd-2=http://etcd-2:2380
+    - --initial-cluster-state
+    - new
+    image: quay.io/coreos/etcd:latest
+    name: etcd-1
+    ports:
+    - containerPort: 2379
+      name: client
+      protocol: TCP
+    - containerPort: 2380
+      name: server
+      protocol: TCP
+    - containerPort: 4001
+      protocol: TCP
+    - containerPort: 7001
+      protocol: TCP      
+  restartPolicy: Never
+  nodeSelector:
+    name: node-2  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    etcd_node: etcd-1
+  name: etcd-1
+spec:
+  ports:
+  - name: client
+    port: 2379
+    protocol: TCP
+    targetPort: 2379
+  - name: server
+    port: 2380
+    protocol: TCP
+    targetPort: 2380
+  - name: etcd-4001
+    port: 4001
+    protocol: TCP
+    targetPort: 4001
+  - name: etcd-7001
+    port: 7001
+    protocol: TCP
+    targetPort: 7001    
+  selector:
+    etcd_node: etcd-1
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: etcd
+    etcd_node: etcd-2
+  name: etcd-2
+spec:
+  containers:
+  - command:
+    - /usr/local/bin/etcd
+    - --name
+    - etcd-2
+    - --initial-advertise-peer-urls
+    - http://etcd-2:2380
+    - --listen-peer-urls
+    - http://0.0.0.0:2380
+    - --listen-client-urls
+    - http://0.0.0.0:2379
+    - --advertise-client-urls
+    - http://etcd-2:2379
+    - --initial-cluster
+    - etcd-0=http://etcd-0:2380,etcd-1=http://etcd-1:2380,etcd-2=http://etcd-2:2380
+    - --initial-cluster-state
+    - new
+    image: quay.io/coreos/etcd:latest
+    name: etcd-2
+    ports:
+    - containerPort: 2379
+      name: client
+      protocol: TCP
+    - containerPort: 2380
+      name: server
+      protocol: TCP
+    - containerPort: 4001
+      protocol: TCP
+    - containerPort: 7001
+      protocol: TCP      
+  restartPolicy: Never
+  nodeSelector:
+    name: node-3  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    etcd_node: etcd-2
+  name: etcd-2
+spec:
+  ports:
+  - name: client
+    port: 2379
+    protocol: TCP
+    targetPort: 2379
+  - name: server
+    port: 2380
+    protocol: TCP
+    targetPort: 2380
+  - name: etcd-4001
+    port: 4001
+    protocol: TCP
+    targetPort: 4001
+  - name: etcd-7001
+    port: 7001
+    protocol: TCP
+    targetPort: 7001
+  selector:
+    etcd_node: etcd-2
+
+
+#kubectl create -f etcd.yml
+#kubectl get pod
+#kubectl get svc
+#
+
+
+##################################################################################################################################################
+
+Using ConfigMaps and Secrets
+-----------------------------
+
+Configuring Containerized Applicaiton
+-------------------------------------
+
+Configuration is the integral part of the application.
+COnfigutation should keep away from the application.
+COnfigmap is a meacanism to separate the configration to the application.
+
+It is one of the k8s object for injecting containers with the configuration data at runtime.
+
+
+Applications experts configuration form
+	Configuration files
+	Command line argument
+	Environemnt variables
+Configuration is always decoupled from appliation
+	INI
+	XML
+	JSON
+	Customer Format
+Container Images shouldn't hold application configutation
+	Essential for keeping contianerized applicaiton portable.
+
+K8s Objects for injecting contianers with configuration data
+ConfigMAps keep contianers agnostic of k8s
+They can be used to store fine-grained or coarse-grained configuration
+	Individual properties
+	Entire configuration file
+	JSON files
+COnfigMAps hold configuration in Key-Value pairs accessible to Pods
+Similar to /etc directory and files on Linux OS
+
+Configuration data can be consumed in pods in a variety of ways
+ConfigMAp can be used to:
+	1. Populate  the value of environemnt
+	2. Set command-line argument in a contianer
+	3. Populate configuration file in a volume
+Users ans system components may store configuration data in a ConfigMap.

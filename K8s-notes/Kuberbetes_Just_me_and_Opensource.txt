@@ -1,0 +1,39 @@
+Kubernetes Pods Replicasets & Deployments
+------------------------------------------
+Pod - it is the smallest unint in the kubernetes.
+Replicaset - it is more than one number of pod
+
+
+Kubernetes Namespaces & Contexts
+--------------------------------
+Namespace- it is averitual cluster
+	The following name space wil create when the K8s create:
+		default- All the default name space will deploy in this name space.
+		kube-public - 
+		kube-system - it contains all the cluster related resource.
+
+
+Persistent Volumes and Claims in Kubernetes Cluster
+---------------------------------------------------
+
+How to use persistent Volumes?
+	1. Create a PV - Created by cluster administrator
+	2. Create a PVC - Requested by the  user
+	3. Create a Pod that uses the PVC
+	this is not the automated. So, whenever we need the persiistent volume then first we need to request Cluseter administator to create the volume for you and then we can use ot later. This the static provising.
+
+Dynamic Provisioning - This is automated. In this case the, the Cluster Admin is going to create storage class and then based on the storage class the volume get provision automatically. Once you are done with application, then you can delete the volume which get creted.
+
+Reclaim Policy:
+	1. Retain - this is the default. The data will not deleted.
+	2. Recycle - It is more for a dynamic provisioning. it is deprecated.
+	3. delete - when we delete the pod then it will also delete the volume
+
+Access Mode:
+	1. RWO (Read Write Once) - if we schedule the multiple Pod on a specific volume then only one Pod can able to write and the reset will able to read.
+	2. RWM (Read Write Many) - it is mounted on a different Pod and all the Pod is ready to read and write simutansouly
+	3. RO (Read Only) - Mount the any number of the Pod and all can read it.
+
+#kubectl cluster-info
+#kubectl get node
+#kubectl version --sort
